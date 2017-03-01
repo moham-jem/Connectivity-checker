@@ -160,20 +160,34 @@ def getText(nodelist):
 
 def getPasswd(srcIP):
 	pw=[]
-	data=json.load(open("Dictpw.txt"))
-	try:
-		en_pw=str(data[srcIP])
-		pw=base64.b64decode(en_pw)
-	except:
-		pw=[]
+	#check if file exist
+	if os.path.exists("Dictpw.txt") :
+		#check if json file or not
+		try:
+			data=json.load(open("Dictpw.txt"))
+		except ValueError, error:
+			pw = []
+		try:
+			en_pw=str(data[srcIP])
+			pw=base64.b64decode(en_pw)
+		except:
+			pw=[]
+	else:
+		f = open("Dictpw.txt","w+")
+		f.close()
 	return pw
+
+
 
 def saveInDict(srcIP, pw):
 	encrypt_pw = base64.b64encode(pw)
 	row={srcIP:encrypt_pw}
-	data = json.load(open("Dictpw.txt"))
-	data.update(row)
-	json.dump(data, open("Dictpw.txt", "w"))
+	try:
+		data = json.load(open("Dictpw.txt"))
+		data.update(row)
+        	json.dump(data, open("Dictpw.txt", "w"))
+	except ValueError, error:
+		json.dump(row,open("Dictpw.txt", "w"))
 
 def checkPW(IP, PW):
 	output=""
@@ -183,6 +197,7 @@ def checkPW(IP, PW):
 		ssh.connect(IP, username='root', password=str(PW))
 	except paramiko.ssh_exception.AuthenticationException:
 		output="wrong"
+	print("Output:"+output)
 	return output
 
 def testSrcIP(IP):
@@ -208,6 +223,7 @@ def checkConnection(sourceNodeName,srcIPs_lined,destIPs_lined,destPorts_lined,de
 			if password == []:
 				password=getpass.getpass("Please enter root password for "+sourceNodeName+" (IP:"+str(srcIP)+"): ")
 				while checkPW(srcIP, password) == "wrong" and count < 3:
+					print("Count "+str(count))
 					count+=1
 					password=getpass.getpass("Invalid password, please re-enter root password: ")
 			if count < 3:
